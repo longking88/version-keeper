@@ -1,0 +1,24 @@
+# ===== 运行时生成的本地数据，绝不入库 =====
+# 版本库：所有历史版本内容块 + SQLite 索引
+repo/
+# 运行日志
+logs/
+# 本机身份（作者名），每台机器各不相同
+identity.json
+# 版本库位置指针，含绝对路径
+repo.txt
+__pycache__/
+*.py[cod]
+
+# ===== Office / 系统临时文件 =====
+~$*
+*.tmp
+*.temp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ===== 编辑器 =====
+.idea/
+.vscode/
+*.swp

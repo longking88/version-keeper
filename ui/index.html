@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>版本助手</title>
+<style>
+  :root{
+    --bg:#F7F7F4; --card:#FFFFFF; --line:#E6E4DD; --line2:#D5D2C8;
+    --ink:#1F1F1E; --ink2:#63625C; --ink3:#8C8A82;
+    --blue:#185FA5; --blue-bg:#E6F1FB;
+    --green:#3B6D11; --green-bg:#EAF3DE;
+    --red:#A32D2D; --red-bg:#FCEBEB;
+    --amber:#854F0B; --amber-bg:#FAEEDA;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:400 13px/1.6 "Microsoft YaHei UI","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 20px 40px}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 2px 18px}
+  .logo{width:34px;height:34px;border-radius:10px;background:var(--blue);
+    display:grid;place-items:center;color:#fff;font-weight:500;font-size:15px}
+  h1{font-size:16px;font-weight:500;margin:0}
+  .sub{font-size:12px;color:var(--ink3)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;
+    background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--ink2)}
+  .dot{width:7px;height:7px;border-radius:99px;background:var(--green)}
+  .dot.off{background:#B4B2A9}
+  .grow{flex:1}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+  .stat b{display:block;font-size:19px;font-weight:500;letter-spacing:-.3px}
+  .stat span{font-size:12px;color:var(--ink3)}
+
+  .bar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .bar.slim{padding:9px 12px}
+  .btn{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:9px;
+    padding:7px 13px;font-size:13px;transition:.15s}
+  .btn:hover{border-color:#B4B2A9;background:#FAFAF7}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover{background:#134F8B}
+  .btn.tgl .ind{width:8px;height:8px;border-radius:2px;border:1px solid var(--line2);
+    display:inline-block;margin-right:6px;vertical-align:1px}
+  .btn.tgl.on .ind{background:var(--blue);border-color:var(--blue)}
+  .btn.tgl.off{color:var(--ink3)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  input[type=text]{border:1px solid var(--line2);border-radius:9px;padding:7px 11px;
+    font:inherit;color:var(--ink);background:#fff;outline:none}
+  input[type=text]:focus{border-color:var(--blue)}
+  select{border:1px solid var(--line2);border-radius:9px;padding:7px 9px;font:inherit;background:#fff}
+
+  .tabs{display:flex;gap:4px;margin-bottom:12px;background:#EDEBE4;padding:4px;border-radius:11px;
+    width:fit-content}
+  .tab{border:0;background:transparent;color:var(--ink2);border-radius:8px;padding:6px 16px;font-size:13px}
+  .tab.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(31,31,30,.08)}
+  .tab .cnt{font-size:11px;color:var(--ink3);margin-left:5px}
+
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:start}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .card h2{font-size:13px;font-weight:500;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:8px;color:var(--ink2)}
+  .list{max-height:calc(100vh - 320px);overflow:auto}
+
+  .frow{padding:10px 14px;border-bottom:1px solid #F1EFE8;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  .frow:hover{background:#FAFAF7}
+  .frow.on{background:var(--blue-bg)}
+  .fname{font-size:13px;word-break:break-all;line-height:1.45}
+  .fmeta{font-size:12px;color:var(--ink3);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .tag{font-size:11px;padding:1px 7px;border-radius:99px;background:#F1EFE8;color:var(--ink2);
+    white-space:nowrap}
+  .tag.auto{background:var(--blue-bg);color:var(--blue)}
+  .tag.manual{background:var(--amber-bg);color:var(--amber)}
+  .tag.pin{background:var(--green-bg);color:var(--green)}
+  .tag.proj{background:#F1EFE8;color:var(--ink2);max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  .tag.del{background:var(--red-bg);color:var(--red)}
+  .empty{padding:30px 16px;text-align:center;color:var(--ink3);font-size:12px;line-height:1.8}
+
+  .vrow{padding:11px 14px;border-bottom:1px solid #F1EFE8;transition:background .4s}
+  .vrow.hl{background:#FFF7DB}
+  .vhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .vtime{font-size:13px;font-weight:500}
+  .vauthor{font-size:11px;color:var(--ink3)}
+  .vnote{font-size:12px;color:var(--ink2);margin:4px 0 7px;word-break:break-all}
+  .vacts{display:flex;gap:7px;flex-wrap:wrap}
+  .mini{border:1px solid var(--line);background:#fff;border-radius:7px;padding:3px 9px;font-size:12px;color:var(--ink2)}
+  .mini:hover{border-color:#B4B2A9;color:var(--ink)}
+  .mini.warn:hover{border-color:var(--red);color:var(--red)}
+  .mini.b{padding:6px 12px;font-size:12px}
+
+  .chips{display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);background:#FCFCFA}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;background:#fff;border:1px solid var(--line);
+    border-radius:99px;padding:3px 6px 3px 10px;max-width:100%}
+  .chip.miss{border-color:#F09595;color:var(--red)}
+  .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px}
+  .chip button{border:0;background:transparent;color:var(--ink3);font-size:14px;line-height:1;padding:0 3px}
+  .chip button:hover{color:var(--red)}
+
+  /* ---------- 时间线 ---------- */
+  .stream{max-height:calc(100vh - 300px);overflow:auto}
+  .group{position:sticky;top:0;z-index:2;background:#F4F3EE;border-bottom:1px solid var(--line);
+    padding:7px 14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink2)}
+  .group b{font-weight:500;color:var(--ink)}
+  .group .gp{font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .group .gc{margin-left:auto;color:var(--ink3);font-size:11px}
+  .trow{display:flex;gap:12px;padding:9px 14px;border-bottom:1px solid #F5F3EC}
+  .trow:hover{background:#FAFAF7}
+  .tt{font:400 11.5px/1.9 "Cascadia Mono",Consolas,monospace;color:var(--ink3);flex:none;width:52px}
+  .tm{min-width:0;flex:1}
+  .tl1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tname{font-size:13px;color:var(--ink);word-break:break-all}
+  .tdelta{font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+  .tauthor{font-size:11px;color:var(--ink3);margin-left:auto;white-space:nowrap}
+  .tnote{font-size:12px;color:var(--ink2);margin-top:1px;word-break:break-all}
+  .tacts{display:flex;gap:6px;margin-top:5px;opacity:.42;transition:.15s}
+  .trow:hover .tacts{opacity:1}
+
+  /* ---------- 共享库 ---------- */
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+  .pad{padding:14px}
+  .kv{display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #EFEDE6;font-size:12.5px}
+  .kv:last-child{border-bottom:0}
+  .kv .k{width:76px;color:var(--ink3);flex:none}
+  .kv .v{min-width:0;word-break:break-all}
+  .mono{font:400 12px/1.6 "Cascadia Mono",Consolas,monospace}
+  .hint{font-size:12px;color:var(--ink3);line-height:1.75}
+  .steps{counter-reset:s;padding:6px 14px 14px}
+  .step{display:flex;gap:10px;padding:7px 0;font-size:12.5px;color:var(--ink2)}
+  .step i{counter-increment:s;font-style:normal;width:19px;height:19px;border-radius:99px;
+    background:var(--blue-bg);color:var(--blue);display:grid;place-items:center;font-size:11px;flex:none;margin-top:2px}
+  .peers{width:100%;border-collapse:collapse;font-size:12.5px}
+  .peers th{text-align:left;font-weight:400;color:var(--ink3);font-size:11.5px;
+    padding:6px 14px;border-bottom:1px solid var(--line);background:#FCFCFA}
+  .peers td{padding:7px 14px;border-bottom:1px solid #F5F3EC}
+  .peers td.n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+
+  .modal{position:fixed;inset:0;background:rgba(31,31,30,.32);display:none;align-items:center;
+    justify-content:center;padding:24px;z-index:40}
+  .modal.on{display:flex}
+  .sheet{background:#fff;border-radius:14px;width:min(1000px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  .sheet header{border-bottom:1px solid var(--line);padding:12px 16px}
+  .sheet h3{margin:0;font-size:14px;font-weight:500}
+  .dbody{overflow:auto;padding:0;font:400 12.5px/1.7 "Cascadia Mono",Consolas,monospace}
+  .dl{display:flex;gap:10px;padding:0 14px;white-space:pre-wrap;word-break:break-word}
+  .dl .t{width:14px;color:var(--ink3);flex:none;text-align:center}
+  .dl.add{background:var(--green-bg);color:var(--green)}
+  .dl.del{background:var(--red-bg);color:var(--red)}
+  .dl.hdr{background:#F4F3EE;color:var(--ink3);padding-top:4px;padding-bottom:4px}
+  .dl .t{color:inherit;opacity:.7}
+  .dnote{padding:16px;color:var(--ink2);font-size:13px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);
+    background:#2C2C2A;color:#fff;padding:9px 16px;border-radius:99px;font-size:13px;
+    opacity:0;transition:.22s;pointer-events:none;z-index:60}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .spin{display:inline-block;width:11px;height:11px;border:1.5px solid rgba(255,255,255,.45);
+    border-top-color:#fff;border-radius:99px;animation:r .7s linear infinite;vertical-align:-1px;margin-right:6px}
+  @keyframes r{to{transform:rotate(360deg)}}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">版</div>
+    <div>
+      <h1>版本助手</h1>
+      <div class="sub" id="repoLine">正在连接…</div>
+    </div>
+    <div class="grow"></div>
+    <div class="pill"><i class="dot" id="dot"></i><span id="autoText">自动记录</span></div>
+    <div class="pill" id="lastScan">尚未扫描</div>
+    <button class="btn" id="btnQuit" style="padding:4px 10px;font-size:12px" title="停止后台记录并关闭程序">退出程序</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="sFiles">-</b><span>已跟踪文件</span></div>
+    <div class="stat"><b id="sVers">-</b><span>累计版本</span></div>
+    <div class="stat"><b id="sStore">-</b><span>实际磁盘占用</span></div>
+    <div class="stat"><b id="sSaved">-</b><span>去重省下的空间</span></div>
+  </div>
+
+  <div class="bar">
+    <button class="btn primary" id="btnSnap">存一版</button>
+    <input type="text" id="note" placeholder="给这一版写个备注（可留空）" style="width:230px" />
+    <button class="btn" id="btnToggle">暂停自动</button>
+    <select id="interval">
+      <option value="10">每 10 秒检查</option>
+      <option value="20">每 20 秒检查</option>
+      <option value="60">每 1 分钟检查</option>
+      <option value="300">每 5 分钟检查</option>
+    </select>
+    <button class="btn tgl" id="btnAutoStart" title="登录 Windows 后自动在托盘里跑起来"><i class="ind"></i>开机自启</button>
+    <button class="btn tgl" id="btnTray" title="在右下角通知区域常驻一个图标"><i class="ind"></i>托盘图标</button>
+    <div class="grow"></div>
+    <input type="text" id="search" placeholder="搜索文件名" style="width:170px" />
+  </div>
+
+  <nav class="tabs">
+    <button class="tab on" data-tab="files">文件<span class="cnt" id="tabFileCnt"></span></button>
+    <button class="tab" data-tab="timeline">时间线</button>
+    <button class="tab" data-tab="shared">共享库</button>
+  </nav>
+
+  <!-- ============ 文件 ============ -->
+  <section id="view-files">
+    <div class="card" style="margin-bottom:14px">
+      <h2>监控的文件夹 <button class="mini" id="btnAddRoot" style="margin-left:auto">+ 添加</button></h2>
+      <div class="chips" id="roots"></div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h2>文件 <span class="tag" id="fileCount">0</span></h2>
+        <div class="list" id="files"></div>
+      </div>
+      <div class="card">
+        <h2 id="verTitle">版本时间线</h2>
+        <div class="list" id="versions">
+          <div class="empty">左边选一个文件，这里显示它的历史版本</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 时间线 ============ -->
+  <section id="view-timeline" hidden>
+    <div class="bar slim">
+      <span style="font-size:12px;color:var(--ink3)">分组</span>
+      <select id="tGroup">
+        <option value="date">按日期</option>
+        <option value="project">按项目</option>
+      </select>
+      <select id="tProject"><option value="">全部项目</option></select>
+      <select id="tOrigin">
+        <option value="">全部动作</option>
+        <option value="manual">只看手动存档</option>
+        <option value="auto">只看自动记录</option>
+      </select>
+      <select id="tDays">
+        <option value="0">全部时间</option>
+        <option value="1">今天</option>
+        <option value="7">近 7 天</option>
+        <option value="30">近 30 天</option>
+      </select>
+      <div class="grow"></div>
+      <span style="font-size:12px;color:var(--ink3)" id="tCount"></span>
+      <button class="mini" id="tRefresh">刷新</button>
+    </div>
+    <div class="card"><div class="stream" id="stream"></div></div>
+  </section>
+
+  <!-- ============ 共享库 ============ -->
+  <section id="view-shared" hidden>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card">
+        <h2>当前版本库</h2>
+        <div class="pad">
+          <div class="kv"><span class="k">位置</span><span class="v mono" id="shPath">-</span></div>
+          <div class="kv"><span class="k">模式</span><span class="v" id="shMode">-</span></div>
+          <div class="kv"><span class="k">我的名字</span><span class="v">
+            <input type="text" id="author" style="width:200px" placeholder="用于区分是谁改的" />
+            <button class="mini" id="btnAuthor" style="margin-left:6px">保存</button>
+          </span></div>
+          <div class="kv"><span class="k">库内统计</span><span class="v" id="shStats">-</span></div>
+          <div class="hint" style="margin-top:10px" id="shTip"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>换成共享库（多人共用）</h2>
+        <div class="pad">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="repoInput" class="mono" style="flex:1;min-width:180px"
+                   placeholder="\\NAS\共享\版本库 或 Z:\版本库" />
+            <button class="btn" id="btnPickRepo">浏览…</button>
+            <button class="btn primary" id="btnSetRepo">切换</button>
+          </div>
+          <div class="hint" style="margin-top:10px">
+            填一个大家都能访问的共享路径（NAS、文件服务器、映射的网络盘都行）。<br>
+            切换后本机立即改用新库；<b>旧库的文件不会被删除或搬迁</b>，需要的话先手工把
+            <span class="mono">objects</span> 和 <span class="mono">index.db</span> 拷过去。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>最近 7 天在这个库里存过版本的机器</h2>
+        <div id="peersBox"></div>
+      </div>
+
+      <div class="card">
+        <h2>让同事一起用（三步）</h2>
+        <div class="steps">
+          <div class="step"><i>1</i><span>把整个「版本助手」文件夹拷到同事电脑，双击
+            <span class="mono">启动.bat</span>。</span></div>
+          <div class="step"><i>2</i><span>在同事的「共享库」里填<b>同一个版本库路径</b>，点切换。</span></div>
+          <div class="step"><i>3</i><span>各自把「我的名字」改成自己的，时间线上就能分清谁改的。</span></div>
+        </div>
+        <div class="pad" style="padding-top:0">
+          <div class="hint">
+            监控的文件夹也建议指向共享盘上的项目目录，这样所有人看到的是同一批文件。<br>
+            注意：共享库不要放在 OneDrive 之类的自动同步目录里，会和多机写入打架。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <header style="display:flex;align-items:center;gap:12px">
+      <h3 id="mTitle">版本对比</h3>
+      <span class="grow"></span>
+      <button class="btn" id="btnClose">关闭</button>
+    </header>
+    <div class="dbody" id="dbody"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (u, o) => {
+  const r = await fetch(u, o);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+};
+const post = (u, b) => api(u, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b||{})});
+let toastTimer;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('on'), 2600);
+}
+let curItem = null, curVersions = [], settings = {}, state = {}, tab = 'files';
+
+/* ---------------- 状态 ---------------- */
+async function loadState(){
+  const s = await api('/api/state');
+  state = s; settings = s.settings;
+  $('#sFiles').textContent = s.stats.files;
+  $('#sVers').textContent = s.stats.versions;
+  $('#sStore').textContent = s.stats.stored_h;
+  $('#sSaved').textContent = s.stats.saved_h + (s.stats.saved_pct ? ' · ' + s.stats.saved_pct + '%' : '');
+  $('#repoLine').textContent = '版本库：' + s.repo + (s.network ? '（共享）' : '');
+  $('#dot').className = 'dot' + (settings.auto_enabled ? '' : ' off');
+  $('#autoText').textContent = settings.auto_enabled ? '自动记录中' : '自动记录已暂停';
+  $('#btnToggle').textContent = settings.auto_enabled ? '暂停自动' : '恢复自动';
+  $('#btnAutoStart').classList.toggle('on', !!s.autostart);
+  $('#btnAutoStart').classList.toggle('off', !s.autostart);
+  $('#btnTray').classList.toggle('on', !!s.tray);
+  $('#btnTray').classList.toggle('off', !s.tray);
+  $('#interval').value = String(settings.interval);
+  const w = s.watcher;
+  if (w && w.last_scan) {
+    const r = w.last_result || {};
+    $('#lastScan').textContent = r.ok === false ? ('最近扫描异常：' + (r.error||'')) :
+      ('最近扫描 ' + w.last_scan + ' · 新增 ' + (r.created||0) + ' 个版本');
+  }
+  renderRoots(s.roots_exist);
+  renderShared(s);
+}
+
+function renderRoots(list){
+  const box = $('#roots');
+  if (!list.length){ box.innerHTML = '<div class="empty" style="padding:8px 0">还没有监控任何文件夹，点右上角「+ 添加」选一个项目目录。</div>'; return; }
+  box.innerHTML = list.map(r => `
+    <div class="chip ${r.ok?'':'miss'}" title="${esc(r.path)}">
+      <span>${esc(r.path)}${r.ok?'':'（目录不存在）'}</span>
+      <button data-drop="${esc(r.path)}" title="移除">×</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-drop]').forEach(b => b.onclick = async () => {
+    if (!confirm('从监控列表移除？已存的版本不会删除。')) return;
+    await post('/api/roots', {action:'remove', path:b.dataset.drop}); refreshAll();
+  });
+}
+
+function renderShared(s){
+  $('#shPath').textContent = s.repo;
+  $('#shMode').innerHTML = s.network
+    ? '<span class="tag" style="background:var(--green-bg);color:var(--green)">网络共享</span> 多台电脑可以同时用'
+    : '<span class="tag">本机磁盘</span> 只有这台电脑能用';
+  if (document.activeElement !== $('#author')) $('#author').value = s.settings.author || '';
+  $('#shStats').textContent = `${s.stats.files} 个文件 · ${s.stats.versions} 个版本 · 实占 ${s.stats.stored_h}`;
+  $('#shTip').innerHTML = s.network
+    ? '当前已连在共享库上。别人在这台电脑的文件夹里改文件，你也能在「时间线」里看到他的记录。'
+    : '想让同事一起用：把版本库放到共享盘，在上面的输入框里填路径点切换。';
+  const box = $('#peersBox');
+  if (!s.peers || !s.peers.length){
+    box.innerHTML = '<div class="empty">最近 7 天还没有记录</div>'; return;
+  }
+  box.innerHTML = `<table class="peers">
+    <thead><tr><th>机器 / 人</th><th style="text-align:right">存了几版</th><th>最后活动</th></tr></thead>
+    <tbody>${s.peers.map(p => `<tr>
+      <td>${esc(p.author)}</td><td class="n">${p.versions}</td><td style="color:var(--ink3)">${esc(p.last_at)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  const sel = $('#tProject');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部项目</option>' +
+    (s.projects||[]).map(p => `<option value="${esc(p.path)}">${esc(p.name)}（${p.versions} 版）</option>`).join('');
+  sel.value = cur;
+}
+
+/* ---------------- 文件视图 ---------------- */
+async function loadFiles(){
+  const q = $('#search').value.trim();
+  const list = await api('/api/files' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  $('#fileCount').textContent = list.length;
+  $('#tabFileCnt').textContent = list.length ? list.length : '';
+  if (!list.length){
+    $('#files').innerHTML = '<div class="empty">还没有任何版本。<br>点「存一版」立刻给当前目录留个底，或等自动记录。</div>';
+    return;
+  }
+  $('#files').innerHTML = list.map(f => `
+    <div class="frow ${curItem===f.id?'on':''}" data-id="${f.id}">
+      <div style="min-width:0">
+        <div class="fname">${esc(base(f.path))}</div>
+        <div class="fmeta">
+          <span>${f.n} 版</span><span>${f.last_at}</span><span>${f.last_size_h}</span>
+          <span class="tag ${f.last_origin}">${f.last_origin==='manual'?'手动':'自动'}</span>
+          ${f.missing?'<span class="tag del">已删除</span>':''}
+        </div>
+      </div>
+    </div>`).join('');
+  $('#files').querySelectorAll('[data-id]').forEach(el => el.onclick = () => selectItem(+el.dataset.id));
+}
+
+async function selectItem(id){
+  curItem = id;
+  document.querySelectorAll('#files [data-id]').forEach(e =>
+    e.classList.toggle('on', +e.dataset.id === id));
+  await loadVersions();
+}
+
+async function loadVersions(){
+  if (!curItem){ return; }
+  curVersions = await api('/api/versions?item_id=' + curItem);
+  const v = curVersions[0];
+  $('#verTitle').textContent = v ? base(v.path) + ' · ' + curVersions.length + ' 个版本' : '版本时间线';
+  if (!curVersions.length){ $('#versions').innerHTML = '<div class="empty">没有版本</div>'; return; }
+  $('#versions').innerHTML = curVersions.map((v, i) => {
+    const prev = curVersions[i+1];
+    return `<div class="vrow" id="v${v.id}">
+      <div class="vhead">
+        <span class="vtime">${v.created_at}</span>
+        <span class="tag ${v.origin}">${v.origin==='manual'?'手动':'自动'}</span>
+        ${v.pinned?'<span class="tag pin">已钉住</span>':''}
+        ${v.exists?'':'<span class="tag del">文件已删除</span>'}
+        <span class="tag">${v.size_h}</span>
+        ${v.author?`<span class="vauthor">${esc(v.author)}</span>`:''}
+      </div>
+      ${v.note?`<div class="vnote">${esc(v.note)}</div>`:''}
+      <div class="vacts">
+        ${v.exists&&prev&&prev.exists?`<button class="mini b" data-diff="${prev.id}_${v.id}">与上一版对比</button>`:''}
+        ${v.exists?`<button class="mini b" data-restore="${v.id}">恢复到这一版</button>`:''}
+        <button class="mini" data-pin="${v.id}" data-p="${v.pinned?1:0}">${v.pinned?'取消钉住':'钉住'}</button>
+        <button class="mini" data-open="${esc(v.path)}">打开文件</button>
+        <button class="mini warn" data-del="${v.id}">删除记录</button>
+      </div>
+    </div>`;
+  }).join('');
+  bindVersionActions();
+}
+
+function bindVersionActions(){
+  document.querySelectorAll('[data-diff]').forEach(b => b.onclick = () => showDiff(b.dataset.diff));
+  document.querySelectorAll('[data-restore]').forEach(b => b.onclick = async () => {
+    if (!confirm('恢复会把当前文件内容换成这一版，当前内容会先自动存一个新版本。继续？')) return;
+    try { const r = await post('/api/restore', {version_id:+b.dataset.restore});
+      toast(r.deleted?'已按该版本删除文件':'已恢复到这一版'); refreshAll();
+    } catch(e){ toast('恢复失败：'+e.message); }
+  });
+  document.querySelectorAll('[data-pin]').forEach(b => b.onclick = async () => {
+    await post('/api/pin', {version_id:+b.dataset.pin, pinned:b.dataset.p==='1'}); loadVersions();
+  });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => post('/api/open', {path:b.dataset.open}));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('只删除这条版本记录，不影响磁盘上的工作文件。继续？')) return;
+    await post('/api/delete-version', {version_id:+b.dataset.del}); toast('记录已删除'); refreshAll();
+  });
+}
+
+/* ---------------- 时间线 ---------------- */
+function dayLabel(iso){
+  const d = iso.slice(0, 10);
+  const today = new Date(); const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dt = new Date(d + 'T00:00:00');
+  const diff = Math.round((t0 - dt) / 86400000);
+  const wd = '日一二三四五六'[dt.getDay()];
+  if (diff === 0) return '今天 · ' + (dt.getMonth()+1) + '月' + dt.getDate() + '日';
+  if (diff === 1) return '昨天 · ' + (dt.getMonth()+1) + '月' + dt.getDate() + '日';
+  if (diff === 2) return '前天 · ' + (dt.getMonth()+1) + '月' + dt.getDate() + '日';
+  return d.replace(/-/g, '/') + ' 周' + wd;
+}
+
+async function loadTimeline(){
+  const group = $('#tGroup').value;
+  const q = $('#search').value.trim();
+  const qs = new URLSearchParams();
+  if ($('#tProject').value) qs.set('project', $('#tProject').value);
+  if ($('#tOrigin').value) qs.set('origin', $('#tOrigin').value);
+  if (+$('#tDays').value) qs.set('days', $('#tDays').value);
+  if (q) qs.set('q', q);
+  qs.set('limit', '400');
+  let data;
+  try { data = await api('/api/timeline?' + qs.toString()); }
+  catch(e){ $('#stream').innerHTML = '<div class="empty">读取失败：' + esc(e.message) + '</div>'; return; }
+
+  const list = data.entries;
+  $('#tCount').textContent = list.length ? (data.full ? '显示最近 ' + list.length + ' 条' : list.length + ' 条') : '';
+  if (!list.length){
+    $('#stream').innerHTML = '<div class="empty">这段时间没有记录。<br>换个筛选条件，或先点「存一版」。</div>';
+    return;
+  }
+  const groups = [];
+  const idx = {};
+  for (const e of list){
+    const key = group === 'project' ? (e.project || '') : e.created_at.slice(0, 10);
+    if (!(key in idx)){ idx[key] = groups.length; groups.push({key, items: []}); }
+    groups[idx[key]].items.push(e);
+  }
+  $('#stream').innerHTML = groups.map(g => {
+    const head = group === 'project'
+      ? `<b>${esc(g.items[0].project_name)}</b><span class="gp">${esc(g.items[0].project || '')}</span>`
+      : `<b>${esc(dayLabel(g.key + ' 00:00:00'))}</b>`;
+    return `<div class="group">${head}<span class="gc">${g.items.length} 个版本</span></div>`
+      + g.items.map(rowHtml).join('');
+  }).join('');
+
+  $('#stream').querySelectorAll('[data-jump]').forEach(b => b.onclick = () => {
+    const [item, vid] = b.dataset.jump.split('_').map(Number);
+    jumpToVersion(item, vid);
+  });
+  $('#stream').querySelectorAll('[data-diff]').forEach(b => b.onclick = () => showDiff(b.dataset.diff));
+  $('#stream').querySelectorAll('[data-open]').forEach(b => b.onclick = () => post('/api/open', {path:b.dataset.open}));
+}
+
+function rowHtml(e){
+  const del = e.delta_type === 'deleted';
+  const first = e.delta_type === 'first';
+  const delta = del ? '<span class="tdelta" style="color:var(--red)">文件被删除</span>'
+    : first ? `<span class="tdelta">首次记录 ${e.size_h}</span>`
+    : `<span class="tdelta">${e.delta_h}</span>`;
+  const canDiff = e.prev_id && e.exists && (e.prev_exists === 1);
+  return `<div class="trow">
+    <div class="tt">${e.created_at.slice(11)}</div>
+    <div class="tm">
+      <div class="tl1">
+        <span class="tname" title="${esc(e.path)}">${esc(e.name)}</span>
+        <span class="tag ${e.origin}">${e.origin==='manual'?'手动':'自动'}</span>
+        <span class="tag proj" title="${esc(e.project||'')}">${esc(e.project_name)}</span>
+        ${delta}
+        <span class="tauthor">${esc(e.author||'')}</span>
+      </div>
+      ${e.note?`<div class="tnote">${esc(e.note)}</div>`:''}
+      <div class="tacts">
+        ${canDiff?`<button class="mini" data-diff="${e.prev_id}_${e.id}">对比上一版</button>`:''}
+        <button class="mini" data-jump="${e.item_id}_${e.id}">看这一版</button>
+        <button class="mini" data-open="${esc(e.path)}">打开文件</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function jumpToVersion(itemId, vid){
+  switchTab('files');
+  await loadFiles();
+  await selectItem(itemId);
+  const el = document.getElementById('v' + vid);
+  if (el){
+    el.scrollIntoView({block:'center'});
+    el.classList.add('hl');
+    setTimeout(() => el.classList.remove('hl'), 2000);
+  }
+}
+
+/* ---------------- 对比 ---------------- */
+async function showDiff(pair){
+  const [a,b] = pair.split('_');
+  $('#modal').classList.add('on');
+  $('#mTitle').textContent = '正在对比…';
+  $('#dbody').innerHTML = '<div class="dnote">读取中…</div>';
+  try{
+    const d = await api(`/api/diff?a=${a}&b=${b}`);
+    if (d.kind === 'none' || d.kind === 'binary'){
+      $('#mTitle').textContent = '无法做内容对比';
+      $('#dbody').innerHTML = `<div class="dnote">${esc(d.message||'')}
+        ${d.a_size_h?`<br>旧：${d.a_size_h} · 新：${d.b_size_h}`:''}</div>`;
+      return;
+    }
+    $('#mTitle').textContent = `对比 ${d.a_at} → ${d.b_at}　+${d.added} 行 / −${d.removed} 行`;
+    if (!d.lines.length){ $('#dbody').innerHTML = '<div class="dnote">两版内容完全一致。</div>'; return; }
+    $('#dbody').innerHTML = d.lines.map(l => {
+      if (l.t === 'h') return `<div class="dl hdr"><span class="t"></span><span>${esc(l.s)}</span></div>`;
+      const cls = l.t === '+' ? 'add' : (l.t === '-' ? 'del' : '');
+      return `<div class="dl ${cls}"><span class="t">${l.t === ' ' ? '' : l.t}</span><span>${esc(l.s) || ' '}</span></div>`;
+    }).join('');
+  }catch(e){ $('#dbody').innerHTML = '<div class="dnote">对比失败：' + esc(e.message) + '</div>'; }
+}
+
+/* ---------------- 通用 ---------------- */
+function base(p){ return String(p).split(/[\\/]/).pop(); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function switchTab(t){
+  tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  $('#view-files').hidden = t !== 'files';
+  $('#view-timeline').hidden = t !== 'timeline';
+  $('#view-shared').hidden = t !== 'shared';
+  if (t === 'timeline') loadTimeline();
+  if (t === 'shared') loadState();
+}
+
+async function refreshAll(){
+  await loadState();
+  await loadFiles();
+  if (curItem) await loadVersions();
+  if (tab === 'timeline') await loadTimeline();
+}
+
+/* ---------------- 事件 ---------------- */
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+$('#btnSnap').onclick = async () => {
+  const b = $('#btnSnap'); b.disabled = true; b.innerHTML = '<span class="spin"></span>存档中';
+  try{
+    const r = await post('/api/snapshot', {note:$('#note').value.trim()});
+    if (r.ok === false) toast(r.error);
+    else toast(`完成：新增 ${r.created} 个、更新 ${r.changed} 个版本`);
+    $('#note').value = '';
+    await refreshAll();
+  }catch(e){ toast('失败：'+e.message); }
+  b.disabled = false; b.textContent = '存一版';
+};
+
+$('#btnToggle').onclick = async () => {
+  await post('/api/settings', {auto_enabled: !settings.auto_enabled});
+  await loadState(); toast(settings.auto_enabled ? '已恢复自动记录' : '已暂停自动记录');
+};
+$('#interval').onchange = async e => { await post('/api/settings', {interval:+e.target.value}); toast('检查间隔已更新'); };
+$('#btnAutoStart').onclick = async () => {
+  const next = !$('#btnAutoStart').classList.contains('on');
+  try {
+    await post('/api/autostart', {enabled: next});
+    toast(next ? '已设为开机自启（下次登录生效）' : '已关闭开机自启');
+    await loadState();
+  } catch(e){ toast('设置失败：' + e.message); }
+};
+$('#btnTray').onclick = async () => {
+  const next = !$('#btnTray').classList.contains('on');
+  try {
+    await post('/api/tray', {enabled: next});
+    await loadState();
+    toast(next ? '已在右下角显示托盘图标' : '托盘图标已关闭');
+  } catch(e){ toast('操作失败：' + e.message); }
+};
+$('#btnAddRoot').onclick = async () => {
+  toast('请在弹出的窗口里选择文件夹');
+  try{ const r = await api('/api/pick-folder');
+    if (!r.path) return;
+    await post('/api/roots', {action:'add', path:r.path});
+    toast('已加入监控，正在建第一个版本…');
+    await post('/api/snapshot', {note:'加入监控时的初始版本'});
+    refreshAll();
+  }catch(e){ toast('添加失败：'+e.message); }
+};
+
+/* 时间线筛选 */
+$('#tGroup').onchange = loadTimeline;
+$('#tProject').onchange = loadTimeline;
+$('#tOrigin').onchange = loadTimeline;
+$('#tDays').onchange = loadTimeline;
+$('#tRefresh').onclick = loadTimeline;
+
+/* 共享库 */
+$('#btnAuthor').onclick = async () => {
+  try { await post('/api/settings', {author: $('#author').value.trim()});
+    toast('名字已保存，之后的记录会用它'); await loadState();
+  } catch(e){ toast('保存失败：' + e.message); }
+};
+$('#btnPickRepo').onclick = async () => {
+  toast('请选择共享盘上的目录（没有就先新建一个）');
+  try { const r = await api('/api/pick-folder'); if (r.path) $('#repoInput').value = r.path; } catch(e){}
+};
+$('#btnSetRepo').onclick = async () => {
+  const p = $('#repoInput').value.trim();
+  if (!p) { toast('请先填版本库路径'); return; }
+  if (!confirm('切换后界面会改用这个库，旧库的文件不会被删除或搬迁。\n\n确定切换到：\n' + p)) return;
+  try {
+    await post('/api/repo', {path: p});
+    curItem = null;
+    toast('已切换版本库');
+    await refreshAll();
+    $('#repoInput').value = '';
+  } catch(e){ toast('切换失败：' + e.message); }
+};
+
+$('#btnQuit').onclick = async () => {
+  if (!confirm('退出后不再自动记录版本（已存版本都保留）。确定退出？')) return;
+  try { await post('/api/quit'); } catch(e) {}
+  document.body.innerHTML = '<div style="display:grid;place-items:center;height:70vh;text-align:center;color:#63625C;font:14px/2 system-ui">'
+    + '版本助手已退出<br><span style="font-size:12px;color:#8C8A82">已保存的版本都在版本库里，重新双击「启动.bat」即可继续</span></div>';
+};
+$('#btnClose').onclick = () => $('#modal').classList.remove('on');
+$('#modal').onclick = e => { if (e.target.id === 'modal') $('#modal').classList.remove('on'); };
+let st; $('#search').oninput = () => {
+  clearTimeout(st);
+  st = setTimeout(() => { if (tab === 'timeline') loadTimeline(); else loadFiles(); }, 250);
+};
+
+refreshAll().then(() => {
+  const p = new URLSearchParams(location.search);
+  const t = p.get('tab'); if (t) switchTab(t);
+  const m = p.get('item');
+  if (m) selectItem(+m);
+  const d = p.get('diff');
+  if (d) showDiff(d);
+});
+setInterval(loadState, 5000);
+setInterval(() => { if (!document.hidden && tab === 'timeline') loadTimeline(); }, 8000);
+setInterval(() => { if (!document.hidden && tab === 'files') loadFiles(); }, 12000);
+</script>
+</body>
+</html>
