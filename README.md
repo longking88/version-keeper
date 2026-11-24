@@ -58,8 +58,8 @@
 **要求**：Windows 7 以上，Python 3.9+（Python 3.12 实测）。
 
 ```bash
-git clone <仓库地址>
-cd 版本助手
+git clone https://github.com/longking88/version-keeper.git
+cd version-keeper
 ```
 
 然后双击 **`启动.bat`**。它会自动找到 Python、后台启动服务、打开浏览器界面：
