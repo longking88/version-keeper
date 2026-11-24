@@ -161,4 +161,6 @@ python server.py --once "投标截止前定稿"           # 只存一版然后�
 
 ## 授权
 
-未指定 License。如需开源分发，建议补充 MIT 或 Apache-2.0。
+[MIT](LICENSE) © 2026 longking88
+
+可自由使用、修改、分发、商用，保留版权声明即可。软件按“现状”提供，不附带任何担保。
