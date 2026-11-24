@@ -23,6 +23,14 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 UI = os.path.join(BASE, "ui", "index.html")
 scan_lock = threading.Lock()
 RECENT = {"last_scan": None, "last_result": None}
+
+
+def log(msg, level="INFO"):
+    """统一日志出口：无论有没有控制台，都会同时落到 logs/app.log。"""
+    try:
+        print("[%s] %-5s %s" % (time.strftime("%H:%M:%S"), level, msg))
+    except Exception:  # noqa: BLE001
+        pass
 TRAY = {"on": False, "obj": None}
 HTTPD = {"obj": None}
 STOP = {"ev": threading.Event()}
@@ -50,8 +58,12 @@ class Watcher(threading.Thread):
                         res = get_repo().scan("auto")
                     RECENT["last_scan"] = time.strftime("%H:%M:%S")
                     RECENT["last_result"] = res
+                    n = (res.get("created") or 0) + (res.get("changed") or 0)
+                    if n:
+                        log("自动记录 %d 个文件" % n)
                 except Exception as e:  # noqa: BLE001
                     RECENT["last_result"] = {"ok": False, "error": str(e)}
+                    log("自动扫描出错: %s" % e, level="ERROR")
             self.stop_event.wait(max(5, st["interval"]))
 
 
@@ -373,13 +385,39 @@ def main():
     ap.add_argument("--tray", action="store_true", help="常驻托盘，不显示控制台")
     args = ap.parse_args()
 
-    # pythonw 启动时 stdout 为 None，把日志落盘方便排查
-    if sys.stdout is None or sys.stderr is None:
+    # 日志始终落盘。pythonw 下 stdout 是 None；被后台任务或计划任务拉起时，
+    # stdout 可能只是一根随时会消失的管道——两种情况下出问题都无从排查。
+    class _Tee:
+        def __init__(self, *streams):
+            self.streams = [s for s in streams if s is not None]
+
+        def write(self, s):
+            for st in self.streams:
+                try:
+                    st.write(s)
+                except Exception:  # noqa: BLE001
+                    pass
+            return len(s)
+
+        def flush(self):
+            for st in self.streams:
+                try:
+                    st.flush()
+                except Exception:  # noqa: BLE001
+                    pass
+
+        def isatty(self):
+            return False
+
+    try:
         logdir = os.path.join(BASE, "logs")
         os.makedirs(logdir, exist_ok=True)
         logf = open(os.path.join(logdir, "app.log"), "a", encoding="utf-8", buffering=1)
-        sys.stdout = sys.stderr = logf
-        print("\n===== %s 启动 =====" % time.strftime("%Y-%m-%d %H:%M:%S"))
+        sys.stdout = _Tee(sys.stdout, logf)
+        sys.stderr = _Tee(sys.stderr, logf)
+    except OSError:
+        pass
+    log("===== 启动 pid=%d 参数=%s =====" % (os.getpid(), " ".join(sys.argv[1:]) or "(无)"))
 
     repo_path = args.repo or read_repo_setting() or os.path.join(BASE, "repo")
     repo = Repo(repo_path)
@@ -421,31 +459,34 @@ def main():
     Watcher(stop).start()
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
-    print("版本助手已启动:", url)
-    print("版本库:", repo.root, "(网络共享)" if repo.network else "(本机)")
+    log("版本助手已启动: %s" % url)
+    log("版本库: %s %s" % (repo.root, "(网络共享)" if repo.network else "(本机)"))
     if not args.no_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
+    # 记下退出原因：日志里有启动没退出，说明是被强杀的，不是自己走的
+    exit_reason = "services 停止"
     try:
         if args.tray:
             start_tray(url, blocking=True)
             if not QUITTING["v"]:
                 # 只是把托盘图标关了，程序继续在后台服务
-                print("托盘已关闭，服务继续运行在", url)
+                log("托盘已关闭，服务继续运行在 %s" % url)
+                exit_reason = "托盘关闭后主循环结束"
                 while not stop.wait(0.5):
                     pass
         else:
             while not stop.wait(0.5):
                 pass
     except KeyboardInterrupt:
-        pass
+        exit_reason = "收到中断信号 (Ctrl+C / CTRL_BREAK)"
     finally:
         stop.set()
         try:
             srv.shutdown()
         except Exception:  # noqa: BLE001
             pass
-        print("已停止")
+        log("已停止 pid=%d 原因=%s" % (os.getpid(), exit_reason))
 
 
 if __name__ == "__main__":
